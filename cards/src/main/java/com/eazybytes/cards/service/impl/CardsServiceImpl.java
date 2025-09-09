@@ -1,8 +1,11 @@
 package com.eazybytes.cards.service.impl;
 
 import com.eazybytes.cards.constants.CardsConstants;
+import com.eazybytes.cards.dto.CardsDto;
 import com.eazybytes.cards.entity.Cards;
 import com.eazybytes.cards.exception.CardsAlreadyExistsException;
+import com.eazybytes.cards.exception.ResourceNotFoundException;
+import com.eazybytes.cards.mapper.CardsMapper;
 import com.eazybytes.cards.repository.CardsRepository;
 import com.eazybytes.cards.service.ICardsService;
 import lombok.AllArgsConstructor;
@@ -18,6 +21,7 @@ public class CardsServiceImpl implements ICardsService{
 
     private CardsRepository cardsRepository;
 
+    @Override
     public void createCard(String mobileNumber) {
         Optional<Cards> cards = cardsRepository.findByMobileNumber(mobileNumber);
         if(cards.isPresent()){
@@ -37,4 +41,33 @@ public class CardsServiceImpl implements ICardsService{
 
         return newCard;
     }
+
+    @Override
+    public CardsDto fetchCardDetails(String mobileNumber) {
+       Cards cards = cardsRepository.findByMobileNumber(mobileNumber).orElseThrow(
+               () -> new ResourceNotFoundException("Card","mobile number", mobileNumber)
+       );
+       return CardsMapper.mapToCardsDto(cards, new CardsDto());
+    }
+
+    @Override
+    public boolean updateCardDetails(CardsDto cardsDto) {
+        Cards cards = cardsRepository.findByMobileNumber(cardsDto.getMobileNumber()).orElseThrow(
+                () -> new ResourceNotFoundException("Card","mobile number", cardsDto.getMobileNumber())
+        );
+        CardsMapper.mapToCards(cardsDto, cards);
+        cardsRepository.save(cards);
+        return true;
+    }
+
+    @Override
+    public boolean deleteCardDetails(String mobileNumber) {
+        Cards cards = cardsRepository.findByMobileNumber(mobileNumber).orElseThrow(
+                () -> new ResourceNotFoundException("Card","mobile number", mobileNumber)
+        );
+        cardsRepository.deleteById(cards.getCardId());
+        return true;
+    }
+
+
 }
